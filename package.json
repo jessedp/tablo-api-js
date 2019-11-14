@@ -1,6 +1,6 @@
 {
   "name": "tablo-api",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "an unofficial API to interact with Tablo DVRs",
   "main": "index.js",
   "scripts": {
