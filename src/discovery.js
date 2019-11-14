@@ -1,11 +1,8 @@
-// const dgram = require('dgram');
-import dgram from 'dgram';
-import axios from 'axios';
-// import bytes from 'byte-data';
-// const axios = require('axios');
+const dgram = require('dgram');
+const axios = require('axios');
 const bytes = require('byte-data');
 
-export default class Discover {
+class Discover {
   constructor() {
     this.sendPort = 8881;
     this.recvPort = 8882;
@@ -90,9 +87,9 @@ export default class Discover {
   }
 }
 
-export const discovery = new Discover();
+const discovery = new Discover();
 
 // export {Discover, discovery}
 
-// export default Discover;
-// export discover;
+exports.default = Discover;
+exports.discovery =  discovery;
