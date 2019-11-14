@@ -1,0 +1,31 @@
+{
+  "name": "tablo-api",
+  "version": "0.0.1",
+  "description": "an unofficial API to interact with Tablo DVRs",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint --ignore-path .gitignore .",
+    "format": "prettier --write \"src/**/*.js\"",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "preversion": "npm run lint"
+  },
+  "keywords": [
+    "tablo",
+    "dvr",
+    "ota"
+  ],
+  "author": "jesse <jessedp@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.19.0",
+    "byte-data": "^16.0.3",
+    "structjs": "^0.2.2",
+    "core-js": "^3.3.2"
+  },
+  "devDependencies": {
+    "eslint": "^6.6.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2",
+    "prettier": "^1.19.1"
+  }
+}
