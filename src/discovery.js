@@ -92,4 +92,4 @@ const discovery = new Discover();
 // export {Discover, discovery}
 
 exports.default = Discover;
-exports.discovery =  discovery;
+exports.discovery = discovery;
