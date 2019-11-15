@@ -10,9 +10,10 @@ class Discover {
     this.watcher = () => {};
   }
 
-  broadcast() {
+  async broadcast() {
     const server = dgram.createSocket('udp4');
     console.log('in broadcast');
+
     server.on('error', (error) => {
       console.log(error);
       clearTimeout(this.watcher);
@@ -38,10 +39,13 @@ class Discover {
       });
     });
 
+    let outerDevice;
+    // const testFunc = (data) => { console.log('testFunc', data); outerDevice=data; };
+
     server.on('message', (msg, info) => {
       if (msg.length !== 140) {
-        console.log(msg);
         console.log(`UNK: Received ${msg.length} of 140 required bytes from ${info.address}:${info.port}`);
+        console.log(msg);
         server.close();
         return false;
       }
@@ -59,19 +63,27 @@ class Discover {
       };
       clearTimeout(this.watcher);
       server.close();
+      // console.log('server.on.message', device);
+
+      // testFunc(device);
+      // I feel like this shouldn't work, but...
+      outerDevice = device;
       // eslint wanted a return, this works but may be wrong
       return device;
     });
-
+    // console.log('after on.message?', outerDevice);
     server.bind(this.recvPort);
+
     this.watcher = setTimeout(() => {
       server.close();
-    }, 250);
+    }, 250); // should be 250
 
-    // this is easily grosser and more wronger than this or it looks
+    // this is easily grosser and more wronger than it looks
     return new Promise((resolve) => {
       server.on('close', () => {
-        resolve();
+        // console.log('discovery-broadcast : close');
+        // console.log('discovery-broadcast, data', outerDevice);
+        resolve(outerDevice);
       });
     });
   }
