@@ -19,27 +19,30 @@ class Tablo {
     this.airings = null;
   }
 
+  /** This should really look for a return multiple devices if they exists, but I can't test that :/
+   *  ditto for the Discover methods this calls
+   * */
   async discover() {
     // const discovery = new Discover();
     console.log('Tablo.discover', discovery);
-    const x = await discovery.broadcast();
-    console.log(x);
+    const bcastData = await discovery.broadcast();
+    console.log('index->discover.broadcast', bcastData);
     let device = {};
-    if (Object.keys(x).length > 0) {
+    if (bcastData && Object.keys(bcastData).length > 0) {
       // console.debug("Broadcast discovery succeeded.");
       device = {
-        ip: x.private_ip,
-        server_id: x.server_id,
+        ip: bcastData.private_ip,
+        server_id: bcastData.server_id,
         via: 'broadcast',
       };
     } else {
       console.log('Broadcast discovery failed, trying HTTP fallback.');
 
-      const y = await discovery.http();
-      if (Object.keys(x).length > 0) {
+      const httpData = await discovery.http();
+      if (httpData && Object.keys(httpData).length > 0) {
         device = {
-          ip: y.cpes[0].private_ip,
-          server_id: y.cpes[0].serverid,
+          ip: httpData.cpes[0].private_ip,
+          server_id: httpData.cpes[0].serverid,
           via: 'http',
         };
       }
