@@ -2,33 +2,50 @@
   "name": "tablo-api",
   "version": "0.1.0",
   "description": "an unofficial API to interact with Tablo DVRs",
-  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jessedp/tablo-api-js"
+  }, "main": "dist/index.js",
   "scripts": {
-    "lint": "eslint --ignore-path .gitignore .",
-    "format": "prettier --write \"src/**/*.js\"",
+    "build": "tsc -p tsconfig.json",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "lint": "tslint -p tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 0",
+    "prepare": "yarn build",
+    "prepublishOnly": "yarn test && yarn lint",
     "preversion": "npm run lint"
   },
   "files": [
-    "src/**/*"
+    "dist/**/*"
   ],
   "keywords": [
     "tablo",
     "dvr",
-    "ota"
+    "ota",
+    "javascript",
+    "api",
+    "electron"
   ],
-  "author": "jesse <jessedp@gmail.com>",
+  "author": {
+    "name": "jesse",
+    "email": "jessedp@gmail.com"
+  },
   "license": "MIT",
   "dependencies": {
     "axios": "^0.19.0",
     "byte-data": "^16.0.3",
-    "structjs": "^0.2.2",
-    "core-js": "^3.3.2"
+    "core-js": "^3.3.2",
+    "debug": "^4.1.1",
+    "structjs": "^0.2.2"
   },
   "devDependencies": {
+    "@types/node": "^12.12.10",
     "eslint": "^6.6.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.18.2",
-    "prettier": "^1.19.1"
+    "prettier": "^1.19.1",
+    "tslint": "^5.20.1",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.7.2"
   }
 }
