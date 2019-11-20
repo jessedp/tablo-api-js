@@ -1,11 +1,12 @@
 {
   "name": "tablo-api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "an unofficial API to interact with Tablo DVRs",
   "repository": {
     "type": "git",
     "url": "https://github.com/jessedp/tablo-api-js"
-  }, "main": "dist/index.js",
+  },
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
