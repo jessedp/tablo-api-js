@@ -1,21 +1,25 @@
-const dgram = require('dgram');
-const axios = require('axios');
-const bytes = require('byte-data');
+import Timeout = NodeJS.Timeout;
+import axios from 'axios';
+import bytes = require('byte-data');
+import * as Debug from 'debug'
+import dgram = require('dgram');
+
+
+const debug  = Debug('discovery');
+
+import IDevice from "./IDevice";
 
 class Discover {
-  constructor() {
-    this.sendPort = 8881;
-    this.recvPort = 8882;
-    this.discoveryUrl = 'https://api.tablotv.com/assocserver/getipinfo/';
-    this.watcher = () => {};
-  }
+  private readonly sendPort: number = 8881;
+  private readonly recvPort: number = 8882;
+  private readonly discoveryUrl: string = 'https://api.tablotv.com/assocserver/getipinfo/';
+  private watcher: Timeout;
 
-  async broadcast() {
+  public async broadcast(): Promise<[IDevice]> {
     const server = dgram.createSocket('udp4');
-    console.log('in broadcast');
 
     server.on('error', (error) => {
-      console.log(error);
+      debug('Bcast Error: ', error);
       clearTimeout(this.watcher);
       server.close();
     });
@@ -31,21 +35,20 @@ class Discover {
       const to = '255.255.255.255';
       client.send(data, this.sendPort, to, (error) => {
         if (error) {
-          console.log('Error: %s', error);
+          debug('Bcast Error: %s', error);
         } else {
-          // console.log('Data sent !!!')
+          debug('Bcast request sent');
         }
         client.close();
       });
     });
 
     let outerDevice;
-    // const testFunc = (data) => { console.log('testFunc', data); outerDevice=data; };
 
     server.on('message', (msg, info) => {
       if (msg.length !== 140) {
-        console.log(`UNK: Received ${msg.length} of 140 required bytes from ${info.address}:${info.port}`);
-        console.log(msg);
+        debug(`UNK: Received ${msg.length} of 140 required bytes from ${info.address}:${info.port}`);
+        debug(msg);
         server.close();
         return false;
       }
@@ -54,24 +57,23 @@ class Discover {
 
       const trunc = (txt) => txt.split('\0', 1)[0];
       const device = {
-        resp_code: trunc(bytes.unpackString(msg, 0, 4)),
         host: trunc(bytes.unpackString(msg, 4, 68)),
         private_ip: trunc(bytes.unpackString(msg, 68, 100)),
+        resp_code: trunc(bytes.unpackString(msg, 0, 4)),
         server_id: trunc(bytes.unpackString(msg, 100, 120)),
         dev_type: trunc(bytes.unpackString(msg, 120, 130)),
-        board_type: trunc(bytes.unpackString(msg, 130, 140)),
+        board: trunc(bytes.unpackString(msg, 130, 140)),
       };
       clearTimeout(this.watcher);
       server.close();
-      // console.log('server.on.message', device);
-
-      // testFunc(device);
+      debug('server.on.message received:');
+      debug(device);
       // I feel like this shouldn't work, but...
       outerDevice = device;
       // eslint wanted a return, this works but may be wrong
       return device;
     });
-    // console.log('after on.message?', outerDevice);
+
     server.bind(this.recvPort);
 
     this.watcher = setTimeout(() => {
@@ -81,27 +83,30 @@ class Discover {
     // this is easily grosser and more wronger than it looks
     return new Promise((resolve) => {
       server.on('close', () => {
-        // console.log('discovery-broadcast : close');
-        // console.log('discovery-broadcast, data', outerDevice);
-        resolve(outerDevice);
+        debug('broadcast : close');
+        debug('broadcast, data:');
+        debug(outerDevice);
+        resolve([outerDevice]);
       });
     });
   }
 
-  async http() {
+  public async http(): Promise<[IDevice]> {
+    let data;
     try {
       const response = await axios.get(this.discoveryUrl);
-      return response.data;
+      data =  response.data.cpes;
     } catch (error) {
-      console.error(error);
-      return {};
+      debug('Http Error:', error);
     }
+    return new Promise((resolve) => {
+        resolve(data);
+    });
+
   }
 }
 
-const discovery = new Discover();
+export const discovery = new Discover();
 
-// export {Discover, discovery}
-
-exports.default = Discover;
+exports.default = discovery;
 exports.discovery = discovery;
