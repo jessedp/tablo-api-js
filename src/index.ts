@@ -49,7 +49,7 @@ class Tablo {
   public async getServerInfo() {
     try {
       const info = await this.get('/server/info');
-      info.checked = new Date();
+      if (info) { info.checked = new Date(); }
       return info;
     } catch (e) {
       console.error(e);
