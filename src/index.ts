@@ -18,7 +18,6 @@ class Tablo {
    *  ditto for the Discover methods this calls
    */
   public async discover() {
-    // const discovery = new Discover();
     let discoverData = await discovery.broadcast();
     debug('discover.broadcast:');
     debug(discoverData);
@@ -95,7 +94,7 @@ class Tablo {
 
   public getUrl(path) {
     const newPath = path.replace(/^\/+/, '');
-    return `http://${this.device.ip}:8885/${newPath}`;
+    return `http://${this.device.private_ip}:8885/${newPath}`;
   }
 
   public async batch(data, callback = null) {
