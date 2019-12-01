@@ -3,9 +3,13 @@ import * as Debug from 'debug';
 
 import { discovery } from './discovery';
 import IDevice from "./IDevice";
+import {VERSION} from "./version";
 
 const debug = Debug('index');
 
+const Axios = axios.create({
+  headers: {'User-Agent': `tablo-api-js/v${VERSION}`}
+});
 
 class Tablo {
   private devices: IDevice[];
@@ -38,11 +42,16 @@ class Tablo {
       return [];
     }
     discoverData.forEach(function (part, index) {
-      this[index].via = via;
+      debug(`part: ${part}`);
+      debug(`index: ${index}`);
+      debug(`this: ${this[index]}`);
+
+      if (this[index]) this[index].via = via;
+      
     }, discoverData); // use arr as this
 
     this.devices = discoverData;
-    this.device = discoverData[0];
+    this.device = this.devices[0];
     return discoverData;
   }
 
@@ -74,7 +83,7 @@ class Tablo {
 
   public async delete(path) {
     const url = this.getUrl(path);
-    return axios.delete(url);
+    return Axios.delete(url);
   }
 
   public async get(path) {
@@ -84,7 +93,7 @@ class Tablo {
     }
     try {
       const url = this.getUrl(path);
-      const response = await axios.get(url);
+      const response = await Axios.get(url);
       return response.data;
     } catch (error) {
       console.error(error);
@@ -128,7 +137,7 @@ class Tablo {
 
     try {
       const url = this.getUrl(path);
-      const returned = await axios.post(url, data);
+      const returned = await Axios.post(url, data);
       return returned.data;
     } catch (error) {
       console.error(error);
