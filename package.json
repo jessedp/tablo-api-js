@@ -8,12 +8,12 @@
   },
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json &&  yarn replace_ver",
+    "build": "yarn lint && tsc -p tsconfig.json &&  yarn replace_ver",
     "replace_ver": "sed -i \"s/@@VERSION@@/$npm_package_version/\" ./dist/version.js ",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 0",
-    "prepare": "yarn build",
+    "prepare": "yarn lint && yarn build",
     "prepublishOnly": "yarn test && yarn lint",
     "preversion": "npm run lint"
   },
