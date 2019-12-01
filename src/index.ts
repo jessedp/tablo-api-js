@@ -46,7 +46,9 @@ class Tablo {
       debug(`index: ${index}`);
       debug(`this: ${this[index]}`);
 
-      if (this[index]) this[index].via = via;
+      if (this[index]){
+        this[index].via = via;
+      }
       
     }, discoverData); // use arr as this
 
