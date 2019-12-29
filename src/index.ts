@@ -3,21 +3,16 @@ import * as Debug from 'debug';
 
 import { discovery } from './discovery';
 import IDevice from "./IDevice";
-import {VERSION} from "./version";
 
 const debug = Debug('index');
 
-const Axios = axios.create({
-  headers: {'User-Agent': `tablo-api-js/v${VERSION}`}
-});
+const Axios = axios.create();
 
 class Tablo {
   private devices: IDevice[];
   private airings: [];
   private device: IDevice;
-
-  // constructor() { }
-
+  
   /** This should really look for and return multiple devices if they exist, but I can't test that :/
    *  ditto for the Discover methods this calls
    */
