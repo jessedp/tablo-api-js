@@ -42,12 +42,16 @@
   },
   "devDependencies": {
     "@types/node": "^12.12.10",
-    "eslint": "^6.7.2",
+    "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.1.0",
     "eslint-plugin-import": "^2.20.1",
+    "minimist": "^1.2.5",
     "prettier": "^1.19.1",
     "tslint": "^6.1.0",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^3.8.3"
+  },
+  "resolutions": {
+    "minimist": "^1.2.5"
   }
 }
