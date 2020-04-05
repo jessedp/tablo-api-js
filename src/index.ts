@@ -53,6 +53,11 @@ class Tablo {
   }
 
   public async getServerInfo() {
+    if (typeof this.device === 'undefined') {
+      console.log('TabloAPI - getServerInfo - No device selected, returning null.');
+      return null;
+    }
+
     try {
       const info = await this.get('/server/info');
       if (info) { info.checked = new Date(); }
@@ -73,8 +78,8 @@ class Tablo {
 
       return await this.batch(this.airings, callback);
     } catch (error) {
-      console.error('getRecordings:', error);
-      return {};
+      console.error('getRecordings error, returning null:', error);
+      return null;
     }
   }
 
@@ -85,7 +90,7 @@ class Tablo {
 
   public async get(path) {
     if (typeof this.device === 'undefined') {
-      console.log('TabloAPI - No device selected, returning null.');
+      console.log('TabloAPI - get - No device selected, returning null.');
       return null;
     }
     try {
@@ -105,8 +110,9 @@ class Tablo {
 
   public async batch(data, callback = null) {
     if (typeof this.device === 'undefined') {
-      console.log('TabloAPI - No device selected, returning null.');
-      return null;
+      const msg = 'TabloAPI - batch -  No device selected, returning null.';
+      console.log(msg);
+      throw(msg);
     }
 
     let chunk = [];
@@ -133,7 +139,7 @@ class Tablo {
 
   public async post({ path = 'batch', data = null }) {
     if (typeof this.device === 'undefined') {
-      console.error('TabloAPI - No device selected, returning null.');
+      console.error('TabloAPI - post - No device selected, returning null.');
       return null;
     }
 
