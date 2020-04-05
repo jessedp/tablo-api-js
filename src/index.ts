@@ -73,6 +73,9 @@ class Tablo {
       if (!this.airings || force) {
         this.airings = await this.get('/recordings/airings');
       }
+      if (!this.airings){
+        return null;
+      }
 
       if (countOnly) { return this.airings.length; }
 
@@ -111,7 +114,7 @@ class Tablo {
   public async batch(data, callback = null) {
     if (typeof this.device === 'undefined') {
       const msg = 'TabloAPI - batch -  No device selected, returning null.';
-      console.log(msg);
+      console.error(msg);
       throw(msg);
     }
 
