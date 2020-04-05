@@ -23,9 +23,11 @@ const Api = new Tablo();
 
 const devices = Api.discover();
 
-Api.device = { ip: "192.168.1.100" }
-
+Api.device = { private_ip: "192.168.1.100" }
+ 
 const serverInfo = Api.getServerInfo();
+
+const recordings = Api.get('/recordings/airings');
 
 ```
 
