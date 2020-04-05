@@ -104,6 +104,11 @@ class Tablo {
   }
 
   public async batch(data, callback = null) {
+    if (typeof this.device === 'undefined') {
+      console.log('TabloAPI - No device selected, returning null.');
+      return null;
+    }
+
     let chunk = [];
     let idx = 0;
     const size = 50;
