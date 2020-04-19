@@ -9,7 +9,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.js",
   "scripts": {
-    "build": "yarn lint && tsc -p tsconfig.json",
+    "build": "yarn lint && tsc -p tsconfig.json --declaration",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.d.*ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 0",
@@ -38,8 +38,7 @@
     "byte-data": "^16.0.3",
     "core-js": "^3.3.2",
     "debug": "^4.1.1",
-    "structjs": "^0.2.2",
-    "tablo-api": "^0.4.0"
+    "structjs": "^0.2.2"
   },
   "devDependencies": {
     "@types/debug": "^4.1.5",
