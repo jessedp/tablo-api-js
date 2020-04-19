@@ -9,7 +9,7 @@ const debug = Debug('index');
 
 const Axios = axios.create();
 
-class TabloApi {
+export default class Tablo {
   private devices: Device[];
   private airingsCache: [];
   private device: Device;
@@ -190,4 +190,4 @@ class TabloApi {
   }
 }
 
-export { TabloApi as Tablo }
+export { Tablo };
