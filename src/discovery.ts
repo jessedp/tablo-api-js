@@ -7,15 +7,18 @@ import dgram = require('dgram');
 
 const debug  = Debug('discovery');
 
-import IDevice from "./IDevice";
+import Device from "./Device";
 
-class Discover {
+export default class Discover {
   private readonly sendPort: number = 8881;
   private readonly recvPort: number = 8882;
   private readonly discoveryUrl: string = 'https://api.tablotv.com/assocserver/getipinfo/';
   private watcher: Timeout;
 
-  public async broadcast(): Promise<[IDevice]> {
+  /**
+   * Attempt discovery via UDP broadcast. Will only return a single device.
+   */
+  public async broadcast(): Promise<[Device]> {
     const server = dgram.createSocket('udp4');
 
     server.on('error', (error) => {
@@ -43,7 +46,7 @@ class Discover {
       });
     });
 
-    let outerDevice;
+    let outerDevice:Device;
 
     server.on('message', (msg, info) => {
       if (msg.length !== 140) {
@@ -55,14 +58,15 @@ class Discover {
       // this is the proper format string let s = struct('>4s64s32s20s10s10s')
       // s = struct.format('b').unpack()
 
-      const trunc = (txt) => txt.split('\0', 1)[0];
-      const device = {
+      const trunc = (txt: string) => txt.split('\0', 1)[0];
+      const device:Device = {
         host: trunc(bytes.unpackString(msg, 4, 68)),
         private_ip: trunc(bytes.unpackString(msg, 68, 100)),
-        resp_code: trunc(bytes.unpackString(msg, 0, 4)),
+        // resp_code: trunc(bytes.unpackString(msg, 0, 4)),
         server_id: trunc(bytes.unpackString(msg, 100, 120)),
         dev_type: trunc(bytes.unpackString(msg, 120, 130)),
         board: trunc(bytes.unpackString(msg, 130, 140)),
+        via: 'broadcast'
       };
       clearTimeout(this.watcher);
       server.close();
@@ -91,22 +95,29 @@ class Discover {
     });
   }
 
-  public async http(): Promise<[IDevice]> {
-    let data;
-    try {
-      const response = await axios.get(this.discoveryUrl);
-      data =  response.data.cpes;
-    } catch (error) {
-      debug('Http Error:', error);
-    }
-    return new Promise((resolve) => {
-        resolve(data);
-    });
+  /**
+   * Attempt discovery via HTTP broadcast using Tablo discovery service
+   */
+  public async http(): Promise<Device[]>{
+    return new Promise(async (resolve, reject) => {
 
+      let data: Device[];
+      try {
+        type Response = { data: { cpes: Device[]}};
+        const response:Response = await axios.get(this.discoveryUrl);
+        data = response.data.cpes;
+        data.forEach((part, index, arr) => {
+          if (arr[index]) {
+            arr[index].via = 'http';
+          }
+        }, data); // use arr as this
+      } catch (error) {
+        debug('Http Error:', error);
+        reject( new Error(`Http Error: ${error}`) );
+      }
+      resolve(data);
+    });
   }
 }
 
 export const discovery = new Discover();
-
-exports.default = discovery;
-exports.discovery = discovery;

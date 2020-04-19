@@ -2,160 +2,192 @@ import axios from 'axios';
 import * as Debug from 'debug';
 
 import { discovery } from './discovery';
-import IDevice from "./IDevice";
+import Device from "./Device";
+import ServerInfo from "./ServerInfo";
 
 const debug = Debug('index');
 
 const Axios = axios.create();
 
-class Tablo {
-  private devices: IDevice[];
-  private airings: [];
-  private device: IDevice;
+class TabloApi {
+  private devices: Device[];
+  private airingsCache: [];
+  private device: Device;
   
-  /** This should really look for and return multiple devices if they exist, but I can't test that :/
-   *  ditto for the Discover methods this calls
+  /**
+   * Utilizes HTTP discovery with UDP broadcast fallback to find local Tablo devices
    */
-  public async discover() {
-    let discoverData = await discovery.broadcast();
-    debug('discover.broadcast:');
+  async discover() {
+
+    let discoverData: Device[];
+    discoverData = await discovery.http();
+
+    debug('discover.http:');
     debug(discoverData);
 
-    let via = null;
-    if (Object.keys(discoverData).length > 0) {
-      debug("Broadcast discovery succeeded.");
-      via = 'broadcast';
-    } else {
-      debug('Broadcast discovery failed, trying HTTP fallback.');
-
-      discoverData = await discovery.http();
-      if (discoverData && Object.keys(discoverData).length > 0) {
-        via = 'http';
-      }
+    if (Object.keys(discoverData).length === 0) {
+      discoverData = await discovery.broadcast();
+      debug('discover.broadcast:');
+      debug(discoverData);
     }
-    if (!via){
+    
+    if (Object.keys(discoverData).length === 0) {
       return [];
     }
-    discoverData.forEach(function (part, index) {
-      debug(`part: ${part}`);
-      debug(`index: ${index}`);
-      debug(`this: ${this[index]}`);
 
-      if (this[index]){
-        this[index].via = via;
-      }
-      
-    }, discoverData); // use arr as this
-
+    // TODO: a nicety when testing, should probably remove
     this.devices = discoverData;
     this.device = this.devices[0];
+    
     return discoverData;
   }
 
-  public async getServerInfo() {
-    if (typeof this.device === 'undefined') {
-      console.log('TabloAPI - getServerInfo - No device selected, returning null.');
-      return null;
-    }
-
-    try {
-      const info = await this.get('/server/info');
-      if (info) { info.checked = new Date(); }
-      return info;
-    } catch (e) {
-      console.error(e);
-      return {};
+  /**
+   * Pre-flight check
+   * @throws Error when no device has been selected
+   */
+  private isReady() {
+    if (typeof this.device === 'undefined' || !this.device || !this.device.private_ip) {
+      const msg = 'TabloAPI - No device selected.'
+      throw new Error(msg);
     }
   }
 
-  public async getRecordings({ countOnly = false, force = false, callback = null }) {
+  /**
+   * Returns server info reported by the Tablo
+   */
+  async getServerInfo() {
+    this.isReady();
+
     try {
-      if (!this.airings || force) {
-        this.airings = await this.get('/recordings/airings');
+      const info: ServerInfo = await this.get('/server/info');
+      return info;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  /**
+   *  Returns a count of the Recordings on the Tablo
+   * @param force whether or not to force reloading from the device or use cached airings
+   */
+  async getRecordingsCount(force = false) {
+    this.isReady();
+    try {
+      if (!this.airingsCache || force) {
+        this.airingsCache = await this.get('/recordings/airings');
       }
-      if (!this.airings){
+      if (!this.airingsCache) {
+        return 0;
+      }
+      return this.airingsCache.length;
+
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  /**
+   * Retrieves all Recordings from the Tablo
+   * @param force whether or not to force reloading from the device or use cached airings
+   * @param progressCallback function to receive a count of records processed
+   */
+  async getRecordings(force = false, progressCallback: (num: number) => void ) {
+    this.isReady();
+    try {
+      if (!this.airingsCache || force) {
+        this.airingsCache = await this.get('/recordings/airings');
+      }
+      if (!this.airingsCache){
         return null;
       }
-
-      if (countOnly) { return this.airings.length; }
-
-      return await this.batch(this.airings, callback);
+      
+      return this.batch(this.airingsCache, progressCallback);
     } catch (error) {
-      console.error('getRecordings error, returning null:', error);
-      return null;
+      throw error;
     }
   }
 
-  public async delete(path) {
+  /**
+   * Deletes a
+   * @param path
+   */
+  async delete(path: string) {
+    this.isReady();
     const url = this.getUrl(path);
     return Axios.delete(url);
   }
 
-  public async get(path) {
-    if (typeof this.device === 'undefined') {
-      console.log('TabloAPI - get - No device selected, returning null.');
-      return null;
-    }
-    try {
-      const url = this.getUrl(path);
-      const response = await Axios.get(url);
-      return response.data;
-    } catch (error) {
-      console.error(error);
-      return {};
-    }
+  /**
+   * Try to receive data from a specified path
+   * @param path
+   */
+  async get<T>(path: string): Promise<T> {
+    this.isReady();
+    return new Promise( async (resolve, reject) => {
+      try {
+        const url = this.getUrl(path);
+        const response: {data: T } = await Axios.get(url);
+        resolve(response.data);
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
-  public getUrl(path) {
+  private getUrl(path: string) {
     const newPath = path.replace(/^\/+/, '');
     return `http://${this.device.private_ip}:8885/${newPath}`;
   }
 
-  public async batch(data, callback = null) {
-    if (typeof this.device === 'undefined') {
-      const msg = 'TabloAPI - batch -  No device selected, returning null.';
-      console.error(msg);
-      throw(msg);
-    }
+  private async batch<T>(data:string[], progressCallback: (arg0: number) => void):Promise<T[]> {
+    this.isReady();
 
-    let chunk = [];
-    let idx = 0;
-    const size = 50;
-    let recs = [];
-    while (idx < data.length) {
-      chunk = data.slice(idx, size + idx);
-      idx += size;
-      // eslint-disable-next-line no-await-in-loop
-      const returned = await this.post({ path: 'batch', data: chunk });
-      // FIX: maybe? no idea if this works instead of Object.values()
-      const values = Object.keys(returned).map( (el) =>{
-        return returned[el]
-      });
+    return new Promise( async (resolve, reject) => {
+      let chunk = [];
+      let idx = 0;
+      const size = 50;
+      let recs: T[] = [];
+      while (idx < data.length) {
+        chunk = data.slice(idx, size + idx);
+        idx += size;
+        
+        let returned: T[];
+        try {
+          returned = await this.post( 'batch', chunk );
+        } catch (err) {
+          reject(err);
+        }
 
-      recs = recs.concat(values);
-      if (typeof callback === 'function') {
-        callback(recs.length);
+        const values = Object.keys(returned).map( (el) =>{
+          return returned[el]
+        });
+
+        recs = recs.concat(values);
+      
+        if (typeof progressCallback === 'function') {
+          progressCallback(recs.length);
+        }
       }
-    }
-    return recs;
+      resolve(recs);
+    });
+
   }
 
-  public async post({ path = 'batch', data = null }) {
-    if (typeof this.device === 'undefined') {
-      console.error('TabloAPI - post - No device selected, returning null.');
-      return null;
-    }
-
-    try {
-      const url = this.getUrl(path);
-      const returned = await Axios.post(url, data);
-      return returned.data;
-    } catch (error) {
-      console.error(error);
-      return {};
-    }
+  async post<T>(path = 'batch', strArray?:string[] ):Promise<T[]> {
+    this.isReady();
+    const toPost = strArray ? strArray : null;
+    return new Promise( async (resolve, reject) => {
+      try {
+        const url = this.getUrl(path);
+        const returned:{ data: T[]} = await Axios.post(url, toPost);
+        const { data } = returned;
+        resolve(data);
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 }
 
-exports.default = Tablo;
-exports.Tablo = Tablo;
+export { TabloApi as Tablo }
