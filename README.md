@@ -1,6 +1,6 @@
-# tablo-api-js
-**tablo-api-js** provides a simple API module to interact with Tablo DVRs. 
-It was developed to be used with Node.js/electron - it may work in the browser, 
+# tablo-api
+**tablo-api** provides a simple API module to interact with Tablo DVRs. 
+It was developed to be used with Node/Electron - it may work in the browser, 
 though ymmv.
 
 ## Installation

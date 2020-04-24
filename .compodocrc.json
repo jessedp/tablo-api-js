@@ -1,0 +1,6 @@
+{
+    "tsconfig": "./tsconfig.json",
+    "output": "./docs/",
+    "toggleMenuItems": ["classes", "interfaces"],
+    "theme": "laravel"
+}
