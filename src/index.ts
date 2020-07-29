@@ -13,7 +13,7 @@ export default class Tablo {
   private devices: Device[];
   private airingsCache: [];
   private device: Device;
-  
+
   /**
    * Utilizes HTTP discovery with UDP broadcast fallback to find local Tablo devices
    */
@@ -30,7 +30,7 @@ export default class Tablo {
       debug('discover.broadcast:');
       debug(discoverData);
     }
-    
+
     if (Object.keys(discoverData).length === 0) {
       return [];
     }
@@ -38,7 +38,7 @@ export default class Tablo {
     // TODO: a nicety when testing, should probably remove
     this.devices = discoverData;
     this.device = this.devices[0];
-    
+
     return discoverData;
   }
 
@@ -92,16 +92,16 @@ export default class Tablo {
    * @param force whether or not to force reloading from the device or use cached airings
    * @param progressCallback function to receive a count of records processed
    */
-  async getRecordings(force = false, progressCallback: (num: number) => void ) {
+  async getRecordings(force = false, progressCallback: (num: number) => void) {
     this.isReady();
     try {
       if (!this.airingsCache || force) {
         this.airingsCache = await this.get('/recordings/airings');
       }
-      if (!this.airingsCache){
+      if (!this.airingsCache) {
         return null;
       }
-      
+
       return this.batch(this.airingsCache, progressCallback);
     } catch (error) {
       throw error;
@@ -124,10 +124,10 @@ export default class Tablo {
    */
   async get<T>(path: string): Promise<T> {
     this.isReady();
-    return new Promise( async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const url = this.getUrl(path);
-        const response: {data: T } = await Axios.get(url);
+        const response: { data: T } = await Axios.get(url);
         resolve(response.data);
       } catch (error) {
         reject(error);
@@ -140,10 +140,10 @@ export default class Tablo {
     return `http://${this.device.private_ip}:8885/${newPath}`;
   }
 
-  private async batch<T>(data:string[], progressCallback: (arg0: number) => void):Promise<T[]> {
+  public async batch<T>(data: string[], progressCallback: (arg0: number) => void): Promise<T[]> {
     this.isReady();
 
-    return new Promise( async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       let chunk = [];
       let idx = 0;
       const size = 50;
@@ -151,20 +151,20 @@ export default class Tablo {
       while (idx < data.length) {
         chunk = data.slice(idx, size + idx);
         idx += size;
-        
+
         let returned: T[];
         try {
-          returned = await this.post( 'batch', chunk );
+          returned = await this.post('batch', chunk);
         } catch (err) {
-          reject(err);
+          return reject(err);
         }
 
-        const values = Object.keys(returned).map( (el) =>{
+        const values = Object.keys(returned).map((el) => {
           return returned[el]
         });
 
         recs = recs.concat(values);
-      
+
         if (typeof progressCallback === 'function') {
           progressCallback(recs.length);
         }
@@ -174,13 +174,13 @@ export default class Tablo {
 
   }
 
-  async post<T>(path = 'batch', strArray?:string[] ):Promise<T[]> {
+  async post<T>(path = 'batch', strArray?: string[]): Promise<T[]> {
     this.isReady();
     const toPost = strArray ? strArray : null;
-    return new Promise( async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const url = this.getUrl(path);
-        const returned:{ data: T[]} = await Axios.post(url, toPost);
+        const returned: { data: T[] } = await Axios.post(url, toPost);
         const { data } = returned;
         resolve(data);
       } catch (error) {
