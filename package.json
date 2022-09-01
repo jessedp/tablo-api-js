@@ -6,8 +6,8 @@
     "type": "git",
     "url": "https://github.com/jessedp/tablo-api-js"
   },
-  "main": "src/index.js",
-  "types": "src/index.d.js",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.js",
   "scripts": {
     "build": "yarn lint && tsc -p ./tsconfig.json --declaration",
     "compodoc": "npx compodoc",
