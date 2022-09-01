@@ -1,6 +1,6 @@
 {
   "name": "tablo-api",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "an unofficial API to interact with Tablo DVRs",
   "repository": {
     "type": "git",
