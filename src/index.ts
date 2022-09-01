@@ -2,12 +2,18 @@ import axios from 'axios';
 import * as Debug from 'debug';
 
 import { discovery } from './discovery';
-import Device from "./Device";
-import ServerInfo from "./ServerInfo";
+import Device from './Device';
+import ServerInfo from './ServerInfo';
 
-const debug = Debug('index');
+const debug = Debug('tablo-api:index');
 
 const Axios = axios.create();
+Axios.defaults.timeout = 5000;
+
+import { version } from '../package.json';
+
+Axios.defaults.headers.common = { 'User-Agent': `tablo-api-js/${version}` };
+debug('Axios headers %O', Axios.defaults.headers);
 
 export default class Tablo {
   private devices: Device[];
@@ -18,8 +24,7 @@ export default class Tablo {
    * Utilizes HTTP discovery with UDP broadcast fallback to find local Tablo devices
    */
   async discover() {
-
-    let discoverData: Device[];
+    let discoverData: Device[] = [];
     discoverData = await discovery.http();
 
     debug('discover.http:');
@@ -31,6 +36,7 @@ export default class Tablo {
       debug(discoverData);
     }
 
+    debug('Devices Found: ', Object.keys(discoverData).length);
     if (Object.keys(discoverData).length === 0) {
       return [];
     }
@@ -48,7 +54,7 @@ export default class Tablo {
    */
   private isReady() {
     if (typeof this.device === 'undefined' || !this.device || !this.device.private_ip) {
-      const msg = 'TabloAPI - No device selected.'
+      const msg = 'TabloAPI - No device selected.';
       throw new Error(msg);
     }
   }
@@ -81,7 +87,6 @@ export default class Tablo {
         return 0;
       }
       return this.airingsCache.length;
-
     } catch (err) {
       throw err;
     }
@@ -160,7 +165,7 @@ export default class Tablo {
         }
 
         const values = Object.keys(returned).map((el) => {
-          return returned[el]
+          return returned[el];
         });
 
         recs = recs.concat(values);
@@ -171,7 +176,6 @@ export default class Tablo {
       }
       resolve(recs);
     });
-
   }
 
   async post<T>(path = 'batch', strArray?: string[]): Promise<T[]> {
