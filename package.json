@@ -6,8 +6,8 @@
     "type": "git",
     "url": "https://github.com/jessedp/tablo-api-js"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.js",
+  "main": "src/index.js",
+  "types": "src/index.d.js",
   "scripts": {
     "build": "yarn lint && tsc -p ./tsconfig.json --declaration",
     "compodoc": "npx compodoc",
@@ -40,10 +40,10 @@
   },
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.21.1",
-    "byte-data": "^16.0.3",
-    "core-js": "^3.3.2",
-    "debug": "^4.1.1",
+    "axios": "^0.27.2",
+    "byte-data": "^19.0.1",
+    "core-js": "^3.25.0",
+    "debug": "^4.3.4",
     "structjs": "^0.2.2"
   },
   "devDependencies": {
@@ -55,7 +55,7 @@
     "eslint-config-airbnb-base": "^14.1.0",
     "eslint-plugin-import": "^2.20.1",
     "lodash": "^4.17.21",
-    "minimist": "^1.2.5",
+    "minimist": "^1.2.6",
     "prettier": "^1.19.1",
     "tslint": "^6.1.0",
     "tslint-config-prettier": "^1.18.0",
