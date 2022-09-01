@@ -1,13 +1,12 @@
 import Timeout = NodeJS.Timeout;
 import axios from 'axios';
 import bytes = require('byte-data');
-import * as Debug from 'debug'
+import * as Debug from 'debug';
 import dgram = require('dgram');
 
+const debug = Debug('tablo-api:discovery');
 
-const debug  = Debug('discovery');
-
-import Device from "./Device";
+import Device from './Device';
 
 export default class Discover {
   private readonly sendPort: number = 8881;
@@ -18,7 +17,7 @@ export default class Discover {
   /**
    * Attempt discovery via UDP broadcast. Will only return a single device.
    */
-  public async broadcast(): Promise<[Device]> {
+  public async broadcast(): Promise<Device[]> {
     const server = dgram.createSocket('udp4');
 
     server.on('error', (error) => {
@@ -46,7 +45,7 @@ export default class Discover {
       });
     });
 
-    let outerDevice:Device;
+    const outerDevices: Device[] = [];
 
     server.on('message', (msg, info) => {
       if (msg.length !== 140) {
@@ -59,27 +58,28 @@ export default class Discover {
       // s = struct.format('b').unpack()
 
       const trunc = (txt: string) => txt.split('\0', 1)[0];
-      const device:Device = {
+      const device: Device = {
         host: trunc(bytes.unpackString(msg, 4, 68)),
         private_ip: trunc(bytes.unpackString(msg, 68, 100)),
         // resp_code: trunc(bytes.unpackString(msg, 0, 4)),
         server_id: trunc(bytes.unpackString(msg, 100, 120)),
         dev_type: trunc(bytes.unpackString(msg, 120, 130)),
         board: trunc(bytes.unpackString(msg, 130, 140)),
-        via: 'broadcast'
+        via: 'broadcast',
       };
-      clearTimeout(this.watcher);
-      server.close();
+
       debug('server.on.message received:');
-      debug(device);
+      debug('device found: ', device);
       // I feel like this shouldn't work, but...
-      outerDevice = device;
+
+      outerDevices.push(device);
       // eslint wanted a return, this works but may be wrong
       return device;
     });
 
     server.bind(this.recvPort);
 
+    // allows us to leave the server open to wait for multiple device replies
     this.watcher = setTimeout(() => {
       server.close();
     }, 250); // should be 250
@@ -88,9 +88,9 @@ export default class Discover {
     return new Promise((resolve) => {
       server.on('close', () => {
         debug('broadcast : close');
-        debug('broadcast, data:');
-        debug(outerDevice);
-        resolve([outerDevice]);
+        debug('outerDevices resolved: ', outerDevices);
+        // resolve([outerDevice]);
+        resolve(outerDevices);
       });
     });
   }
@@ -98,24 +98,39 @@ export default class Discover {
   /**
    * Attempt discovery via HTTP broadcast using Tablo discovery service
    */
-  public async http(): Promise<Device[]>{
+  public async http(): Promise<Device[]> {
     return new Promise(async (resolve, reject) => {
-
-      let data: Device[];
+      let devices: Device[] = [];
       try {
-        type Response = { data: { cpes: Device[]}};
-        const response:Response = await axios.get(this.discoveryUrl);
-        data = response.data.cpes;
-        data.forEach((part, index, arr) => {
-          if (arr[index]) {
-            arr[index].via = 'http';
-          }
-        }, data); // use arr as this
+        type Response = { data: { success?: boolean; error?: { code: number; message: string }; cpes: Device[] } };
+        const response: Response = await axios.get(this.discoveryUrl);
+        const data = response.data;
+        if (!data.success) {
+          debug('HTTP Response Not succcess', data);
+          return resolve(devices);
+        }
+
+        if (typeof data.error !== 'undefined') {
+          debug('HTTP Response Error', data);
+          return resolve(devices);
+        }
+
+        devices = response.data.cpes;
+        if (typeof devices === 'undefined') {
+          debug('HTTP device data in successful response? ', response.data);
+        } else {
+          devices.forEach((part, index, arr) => {
+            if (arr[index]) {
+              arr[index].via = 'http';
+            }
+          }, devices); // use arr as this
+        }
+        return resolve(devices);
       } catch (error) {
         debug('Http Error:', error);
-        reject( new Error(`Http Error: ${error}`) );
+        reject(new Error(`Http Error: ${error}`));
       }
-      resolve(data);
+      resolve(devices);
     });
   }
 }
