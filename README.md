@@ -17,7 +17,7 @@ or with yarn
 In Node:
 
 ```js
-const Tablo = require('tablo-api');
+const {Tablo} = require('tablo-api');
 
 const Api = new Tablo();
 
