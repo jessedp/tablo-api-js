@@ -193,7 +193,7 @@ export default class Tablo {
     });
   }
 
-  async patch<T>(path: string, patchData: any): Promise<T[]> {
+  async patch<T>(path: string, patchData: string[] | object): Promise<T[]> {
     this.isReady();
     return new Promise(async (resolve, reject) => {
       try {
