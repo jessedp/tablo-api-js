@@ -192,6 +192,20 @@ export default class Tablo {
       }
     });
   }
+
+  async patch<T>(path: string, patchData: any): Promise<T[]> {
+    this.isReady();
+    return new Promise(async (resolve, reject) => {
+      try {
+        const url = this.getUrl(path);
+        const returned: { data: T[] } = await Axios.patch(url, patchData);
+        const { data } = returned;
+        resolve(data);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
 }
 
 export { Tablo };
